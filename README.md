@@ -8,7 +8,22 @@ AI Engineer - NLP, create A Built an app with the following steps :
 
 To analyze a collection of mysterious documents left behind by a person.
 
+mysterious_document_analyzer/
+├── data/              # Stores the input documents (.docx, .pdf, .csv, .xlsx)
+├── vector_db/         # Stores the Nomic Atlas vector database
+├── models/            # Stores the local LLM (e.g., LLaMA)
+├── utils/
+│   ├── document_processing.py  # Handles document loading, chunking
+│   ├── vector_db_utils.py    # Handles vector database operations
+│   ├── llm_utils.py          # Handles LLM interactions
+│   ├── translation_utils.py # Handles translation and summarization
+├── app.py             # Streamlit application
+├── requirements.txt   # Project dependencies
+└── README.md          # Project documentation
 
+## pipline 
+
+Build the document loading → chunking → vectorizing → retrieval → answering pipeline first.
 
 ## steps 
 - python -m venv venv  

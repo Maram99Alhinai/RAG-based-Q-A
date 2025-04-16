@@ -9,3 +9,5 @@ pytesseract
 pdfminer
 networkx
 openpyxl
+ctranslate2
+transformers

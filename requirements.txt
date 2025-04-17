@@ -11,4 +11,4 @@ networkx
 openpyxl
 ctranslate2
 transformers
-
+sentence-transformers

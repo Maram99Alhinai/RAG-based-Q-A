@@ -2,3 +2,5 @@
 /movies.csv
 /data/Raw
 /.env
+/utils/__pycache__
+/a.py

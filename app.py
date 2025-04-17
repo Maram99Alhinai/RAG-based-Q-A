@@ -4,7 +4,7 @@ from utils.vector_db_utils import create_vector_db, retrieve_relevant_documents
 from utils.llm_utils import setup_llm, create_qa_chain
 from utils.translation_utils import translate_text, summarize_text
 import os
-
+import ollama
 
 st.write("Hello World")
 

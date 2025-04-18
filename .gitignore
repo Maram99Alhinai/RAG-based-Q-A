@@ -4,3 +4,5 @@
 /.env
 /utils/__pycache__
 /a.py
+/models/opus-mt-en-fr
+/data/temp

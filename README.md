@@ -37,6 +37,11 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 - python -m venv venv  
 - venv\Scripts\activate
 - pip install -r requirements.txt 
+- python llm_loader.py
+- mkdir -p models
+- cd models
+- wget https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGML/resolve/main/llama-2-7b-chat.ggmlv3.q4_0.bin
+- cd ..
 - streamlit run app.py
 
 
@@ -44,3 +49,4 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 # changes to make 
 make the user select the data folder
 show message when each step is done 
+

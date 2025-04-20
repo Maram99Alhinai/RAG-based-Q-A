@@ -1,6 +1,9 @@
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import os
 
+
+
+#Translate model 
 model_name = "Helsinki-NLP/opus-mt-en-fr"
 save_directory = "models"
 
@@ -16,3 +19,8 @@ tokenizer.save_pretrained(os.path.join(save_directory, "opus-mt-en-fr"))
 model.save_pretrained(os.path.join(save_directory, "opus-mt-en-fr"))
 
 print(f"OPUS-MT en-fr model and tokenizer downloaded to: {os.path.join(save_directory, 'opus-mt-en-fr')}")
+
+
+
+#Chat llm model 
+model_name = "llama-2-7b-chat.ggmlv3.q4_0.bin"

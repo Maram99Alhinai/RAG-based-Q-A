@@ -1,7 +1,9 @@
+httpx
 streamlit
 pandas
 langchain
-langchain-community 
+langchain-community
+langchain-huggingface
 python-docx
 unstructured
 pdf2image 
@@ -13,5 +15,4 @@ ctranslate2
 transformers
 sentence-transformers
 sentencepiece
-nomic
-
+faiss-cpu

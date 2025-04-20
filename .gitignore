@@ -7,3 +7,5 @@
 /models/opus-mt-en-fr
 /data/temp
 /models/llama-2-7b-chat.ggmlv3.q4_0.bin
+/data/vector_db
+/data/uploaded

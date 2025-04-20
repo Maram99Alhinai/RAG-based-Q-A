@@ -16,3 +16,4 @@ transformers
 sentence-transformers
 sentencepiece
 faiss-cpu
+ctransformers

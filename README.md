@@ -49,4 +49,3 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 # changes to make 
 make the user select the data folder
 show message when each step is done 
-

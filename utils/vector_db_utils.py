@@ -22,12 +22,13 @@ def load_vector_db(persist_directory):
     embeddings = HuggingFaceEmbeddings()
     
     if os.path.exists(persist_directory):
-        vector_db = FAISS.load_local(persist_directory, embeddings)
+        vector_db = FAISS.load_local(persist_directory, embeddings,
+                                     allow_dangerous_deserialization=True)
         return vector_db
     else:
         return None
 
-def retrieve_relevant_documents(vector_db, query, k=4):
+def retrieve_relevant_documents(vector_db, query, k=2):
     """Retrieves relevant documents from the vector database."""
     relevant_docs = vector_db.similarity_search(query, k=k)
     return relevant_docs

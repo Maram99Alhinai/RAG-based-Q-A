@@ -24,7 +24,7 @@ def load_documents(data_path):
     return documents
 
 
-def chunk_documents(documents, chunk_size=1000, chunk_overlap=200):
+def chunk_documents(documents, chunk_size=500, chunk_overlap=100):
     """Splits documents into smaller chunks."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap

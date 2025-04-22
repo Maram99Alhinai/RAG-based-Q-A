@@ -1,9 +1,6 @@
 from langchain_community.llms import CTransformers
 from langchain.chains import RetrievalQA
-from utils.vector_db_utils import load_vector_db, create_vector_db
-from utils.document_processing import load_documents, chunk_documents
 import streamlit as st
-
 
 
 
@@ -19,21 +16,17 @@ def create_qa_chain(llm, vector_db):
     return qa_chain
 
 
-def setup_llm_and_qa(vector_db_path, llm_model_path):
-    """Loads the vector database, sets up the LLM, and creates the QA chain."""
-
-    vector_db = load_vector_db(vector_db_path)
-    if vector_db:
-        llm = setup_llm(llm_model_path)
-        qa_chain = create_qa_chain(llm, vector_db)
-        return vector_db, llm, qa_chain
-    else:
-        st.error("Error loading the vector database. Please process documents first.")
-        return None, None, None
+def setup_llm_and_qa(vector_db, LLM_MODEL_PATH):
+    """Sets up the LLM and creates the QA chain."""
+    llm = setup_llm(LLM_MODEL_PATH)
+    qa_chain = create_qa_chain(llm, vector_db)
+    return llm, qa_chain
     
 
 def process_documents_and_create_db(data_path, vector_db_path):
     """Loads, chunks, and creates a vector database."""
+    from utils.document_processing import load_documents, chunk_documents
+    from utils.vector_db_utils import create_vector_db
 
     progress_bar = st.progress(0)
     status_text = st.empty()

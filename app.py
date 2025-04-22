@@ -1,4 +1,4 @@
-from utils.llm_utils import setup_llm, create_qa_chain ,process_documents_and_create_db
+from utils.llm_utils import create_qa_chain ,process_documents_and_create_db ,setup_llm_and_qa
 from utils.vector_db_utils import load_vector_db
 from pathlib import Path
 import streamlit as st
@@ -14,47 +14,11 @@ st.set_page_config(
     layout="wide",
 )
 
+
 # Custom CSS for better styling
-st.markdown("""
-<style>
-    .main-title {
-        font-size: 42px;
-        font-weight: bold;
-        color: #1E3A8A;
-        margin-bottom: 30px;
-        text-align: center;
-    }
-    .section-header {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2563EB;
-        margin-top: 20px;
-        margin-bottom: 10px;
-    }
-    .success-message {
-        background-color: #DCFCE7;
-        padding: 10px;
-        border-radius: 5px;
-        border-left: 5px solid #22C55E;
-    }
-    .info-message {
-        background-color: #EFF6FF;
-        padding: 10px;
-        border-radius: 5px;
-        border-left: 5px solid #3B82F6;
-    }
-    .stButton>button {
-        background-color: #2563EB;
-        color: white;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: bold;
-    }
-    .stButton>button:hover {
-        background-color: #1E40AF;
-    }
-</style>
-""", unsafe_allow_html=True)
+with open("style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 
 # Prevent CUDA initialization error
 torch.classes.__path__ = []
@@ -81,13 +45,17 @@ TRANSLATION_MODEL_PATH = "models/opus-mt-en-fr"
 st.markdown('<p class="main-title">📚 Mysterious Document Analyzer</p>', unsafe_allow_html=True)
 
 
-
 # Sidebar for setup
 with st.sidebar:
     st.markdown("### Setup")
 
-    if not st.session_state.vector_db:
-        st.markdown("#### Process New Documents")
+    load_option = st.radio(
+        "Choose setup option:",
+        ["Process New Documents", "Load Existing Database"]
+    )
+
+    if load_option == "Process New Documents":
+        st.markdown("#### Process Documents")
         data_option = st.radio(
             "Select data source:",
             ["Use default directory", "Upload files", "Custom directory"]
@@ -125,12 +93,34 @@ with st.sidebar:
                 vector_db = process_documents_and_create_db(st.session_state.data_path, st.session_state.vector_db_path)
                 if vector_db:
                     st.session_state.vector_db = vector_db
-                    llm = setup_llm(LLM_MODEL_PATH)
+                    llm, qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
                     st.session_state.llm = llm
-                    st.session_state.qa_chain = create_qa_chain(llm, vector_db)
+                    st.session_state.qa_chain = qa_chain
                     st.session_state.documents_processed = True
                     st.rerun()
-    else:
+
+    elif load_option == "Load Existing Database":
+        print(load_option)
+        if st.button("Load Database"):
+            print("load_option")
+            with st.spinner("Loading database..."):
+                vector_db = load_vector_db(st.session_state.vector_db_path)
+                if vector_db:
+                    st.session_state.vector_db = vector_db
+                    print('session_state')
+                    llm, qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
+                    print('setup_llm_and_qa')
+                    st.session_state.llm = llm
+                    st.session_state.qa_chain = qa_chain
+                    print('qa_chain')
+                    st.session_state.documents_processed = True
+                    st.success("Database loaded!")
+                    st.rerun()
+                else:
+                    st.error("Database not found. Please process documents first.")
+
+    if st.session_state.vector_db:
+        st.markdown("---")
         st.markdown("#### Add Files for Preprocessing")
         uploaded_files_add = st.file_uploader("Upload files to add to database:", accept_multiple_files=True, type=['pdf', 'docx', 'csv', 'xlsx'])
         if uploaded_files_add and st.button("Add Files"):
@@ -143,7 +133,6 @@ with st.sidebar:
                         f.write(uploaded_file.getbuffer())
                 new_vector_db = process_documents_and_create_db(new_files_path, st.session_state.vector_db_path)
                 if new_vector_db and st.session_state.llm:
-                    # Assuming your create_vector_db can append (you might need to adjust)
                     st.session_state.vector_db = load_vector_db(st.session_state.vector_db_path) # Reload to include new data
                     st.session_state.qa_chain = create_qa_chain(st.session_state.llm, st.session_state.vector_db)
                     st.success(f"{len(uploaded_files_add)} files added to the database.")
@@ -166,6 +155,7 @@ if st.session_state.documents_processed and st.session_state.qa_chain:
         print(query)
         with st.spinner("Analyzing documents..."):
             from utils.vector_db_utils import retrieve_relevant_documents
+            print('working on ans')
             answer = st.session_state.qa_chain.invoke({"query": query})["result"]
 
             st.markdown("### Answer")
@@ -190,9 +180,9 @@ elif not st.session_state.documents_processed:
 
     ### Getting Started
 
-    1. Select your data source in the sidebar.
-    2. Click "Preprocess Documents" to load and prepare your data for analysis.
-    3. Once processed, you can ask questions in the main area.
+    1. Choose whether to process new documents or load an existing database in the sidebar.
+    2. Follow the instructions to either preprocess your data or load the existing setup.
+    3. Once processed/loaded, you can ask questions in the main area.
     """)
 
 # Footer

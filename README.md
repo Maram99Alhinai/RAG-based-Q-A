@@ -14,6 +14,7 @@ mysterious_document_analyzer/
 │   ├── vector_db         # Stores the Nomic Atlas vector database
 ├── models/            # Stores the local LLM (e.g., LLaMA)
 ├── utils/
+│   ├── __init__.py 
 │   ├── document_processing.py  # Handles document loading, chunking
 │   ├── vector_db_utils.py    # Handles vector database operations
 │   ├── llm_utils.py          # Handles LLM interactions
@@ -49,3 +50,4 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 # changes to make 
 make the user select the data folder
 show message when each step is done 
+-save and show the chat history 

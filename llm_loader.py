@@ -22,5 +22,3 @@ print(f"OPUS-MT en-fr model and tokenizer downloaded to: {os.path.join(save_dire
 
 
 
-#Chat llm model 
-model_name = "llama-2-7b-chat.ggmlv3.q4_0.bin"

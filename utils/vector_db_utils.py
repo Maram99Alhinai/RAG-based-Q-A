@@ -28,7 +28,7 @@ def load_vector_db(persist_directory):
     else:
         return None
 
-def retrieve_relevant_documents(vector_db, query, k=1):
+def retrieve_relevant_documents(vector_db, query, k=2):
     """Retrieves relevant documents from the vector database."""
     relevant_docs = vector_db.similarity_search(query, k=k)
     return relevant_docs

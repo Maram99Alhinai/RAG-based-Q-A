@@ -160,7 +160,8 @@ if st.session_state.documents_processed and st.session_state.qa_chain:
 
             st.markdown("### Answer")
             st.markdown(f"<div style='background-color:#E6EEF7; color: black; padding:15px; border-radius:5px;'>{answer}</div>", unsafe_allow_html=True)
-
+            print('answer', answer)
+            
             if show_sources and st.session_state.vector_db:
                 st.markdown("### Relevant Sources")
                 relevant_docs = retrieve_relevant_documents(st.session_state.vector_db, query)
@@ -170,6 +171,7 @@ if st.session_state.documents_processed and st.session_state.qa_chain:
                         st.markdown(doc.page_content)
                         if hasattr(doc.metadata, 'source') and doc.metadata.source:
                             st.caption(f"Source: {doc.metadata.source}")
+                            
 
 elif not st.session_state.documents_processed:
     # Display welcome message and instructions

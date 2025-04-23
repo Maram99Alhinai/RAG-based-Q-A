@@ -12,7 +12,7 @@ def setup_llm(model_path):
 
 def create_qa_chain(llm, vector_db):
     """Creates a RAG-based Q&A chain."""
-    qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="map_reduce", retriever=vector_db.as_retriever())
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="refine", retriever=vector_db.as_retriever())
     return qa_chain
 
 

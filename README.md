@@ -38,10 +38,12 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 - python -m venv venv  
 - venv\Scripts\activate
 - pip install -r requirements.txt 
-- python llm_loader.py
 - mkdir -p models
 - cd models
-- wget https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGML/resolve/main/llama-2-7b-chat.ggmlv3.q4_0.bin
+- git lfs install
+- git clone git@hf.co:meta-llama/Llama-2-7b-chat-hf
+- git clone git@hf.co:Helsinki-NLP/opus-mt-en-mt
+- git clone git@hf.co:microsoft/Phi-3-mini-4k-instruct
 - cd ..
 - streamlit run app.py
 

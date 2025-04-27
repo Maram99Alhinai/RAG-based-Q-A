@@ -39,7 +39,7 @@ if 'vector_db_path' not in st.session_state:
 
 # Paths for models
 LLM_MODEL_PATH = "models/llama-2-7b-chat.ggmlv3.q4_0.bin"
-TRANSLATION_MODEL_PATH = "models/opus-mt-en-fr"
+TRANSLATION_MODEL_PATH = "models\opus-mt-en-mt"
 
 # Main title
 st.markdown('<p class="main-title">📚 Mysterious Document Analyzer</p>', unsafe_allow_html=True)
@@ -157,7 +157,6 @@ if st.session_state.documents_processed and st.session_state.qa_chain:
             from utils.vector_db_utils import retrieve_relevant_documents
             print('working on ans')
             answer = st.session_state.qa_chain.invoke({"query": query})["result"]
-
             st.markdown("### Answer")
             st.markdown(f"<div style='background-color:#E6EEF7; color: black; padding:15px; border-radius:5px;'>{answer}</div>", unsafe_allow_html=True)
             print('answer', answer)
@@ -192,12 +191,4 @@ st.markdown("---")
 st.markdown("Mysterious Document Analyzer © 2025")
 
 
-# st.title('Ask watsonx')
-# # Setup a session state message variable to hold all the old messages 
-# if 'messages' not in st.session_state:
-#     st.session_state.messages = []
-# # Display all the historical messages
-# for message in st.session_state.messages:
-#     st.chat_message(message['role']).markdown(message['content'])
-# # Build a prompt input template to display the prompts 
-# prompt = st.chat_input('Pass Your Prompt here')
+

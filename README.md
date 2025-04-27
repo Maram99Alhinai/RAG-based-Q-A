@@ -41,15 +41,16 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 - mkdir -p models
 - cd models
 - git lfs install
-- git clone git@hf.co:meta-llama/Llama-2-7b-chat-hf
-- git clone git@hf.co:Helsinki-NLP/opus-mt-en-mt
-- git clone git@hf.co:microsoft/Phi-3-mini-4k-instruct
+- git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/meta-llama/Llama-2-7b-chat-hf
+- git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/facebook/m2m100_418M
+- git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/microsoft/Phi-3-mini-4k-instruct
 - cd ..
 - streamlit run app.py
-
 
 
 # changes to make 
 make the user select the data folder
 show message when each step is done 
 -save and show the chat history 
+
+

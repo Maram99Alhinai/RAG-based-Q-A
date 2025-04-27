@@ -24,6 +24,27 @@ def load_documents(data_path):
     return documents
 
 
+def load_document(data_path):
+    """Loads a single document from the specified path."""
+    document = []
+    file_name = os.path.basename(data_path) # gets the name of the file.
+
+    if data_path.endswith(".docx"):
+        loader = UnstructuredWordDocumentLoader(data_path)
+    elif data_path.endswith(".pdf"):
+        loader = PyPDFLoader(data_path)
+    elif data_path.endswith(".xlsx"):
+        loader = UnstructuredExcelLoader(data_path)
+    else:
+        raise ValueError(f"File type not supported: {data_path}")  # Raise an error for unsupported file types
+
+    document = loader.load()  # Load the document
+    for doc in document:
+        doc.metadata['source'] = file_name # Preserve the filename in the metadata.
+    return document
+
+
+
 def chunk_documents(documents, chunk_size=200, chunk_overlap=10):
     """Splits documents into smaller chunks."""
     text_splitter = RecursiveCharacterTextSplitter(

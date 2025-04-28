@@ -30,7 +30,7 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 
 ## Prereqest 
 - Python 3.11.4
--  Nomic AI account for the project and token 
+- Huggingface account 
 
 
 
@@ -50,6 +50,7 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 
 # changes to make 
 make the user select the data folder
+can we take more chanck
 show message when each step is done 
 -save and show the chat history 
 

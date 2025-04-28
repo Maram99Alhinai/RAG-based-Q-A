@@ -1,5 +1,5 @@
 from utils.llm_utils import create_qa_chain ,process_documents_and_create_db ,setup_llm_and_qa
-from utils.vector_db_utils import load_vector_db
+from utils.vector_db_utils import load_vector_db , retrieve_relevant_documents
 from utils.document_processing import load_document
 from utils.translation_utils import translate
 from pathlib import Path
@@ -9,89 +9,55 @@ import os
 
 
 
-# Set page configuration and styling
-st.set_page_config(
-    page_title="Mysterious Document Analyzer",
-    page_icon="📚",
-    layout="wide",
-)
-
-
-# Custom CSS for better styling
-with open("style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-
-# Prevent CUDA initialization error
-torch.classes.__path__ = []
-
-
-# Paths for models
+# --- CONFIGURATION ---
+st.set_page_config(page_title="Mysterious Document Analyzer", page_icon="📚", layout="wide")
+torch.classes.__path__ = []  # Prevent CUDA error (source: [PyTorch Forums](https://discuss.pytorch.org/))
 LLM_MODEL_PATH = "models/llama-2-7b-chat.ggmlv3.q4_0.bin"
 TRANSLATION_MODEL_PATH = "models/m2m100_418M"
 
+# --- SESSION STATE ---
+for key, value in {
+    "vector_db": None,
+    "llm": None,
+    "qa_chain": None,
+    "documents_processed": False,
+    "data_path": "data/Raw",
+    "vector_db_path": "./data/vector_db",
+    "translation_service": None
+}.items():
+    st.session_state.setdefault(key, value)
 
-# Initialize session state variables if they don't exist
-if 'vector_db' not in st.session_state:
-    st.session_state.vector_db = None
-if 'llm' not in st.session_state:
-    st.session_state.llm = None
-if 'qa_chain' not in st.session_state:
-    st.session_state.qa_chain = None
-if 'documents_processed' not in st.session_state:
-    st.session_state.documents_processed = False
-if 'data_path' not in st.session_state:
-    st.session_state.data_path = "data/Raw"
-if 'vector_db_path' not in st.session_state:
-    st.session_state.vector_db_path = "./data/vector_db"
-if 'translation_service' not in st.session_state:
-    st.session_state.translation_service = None
+# --- STYLE ---
+if Path("style.css").exists():
+    st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
-    
-
-
-
-
-# Main title
+# --- HEADER ---
 st.markdown('<p class="main-title">📚 Mysterious Document Analyzer</p>', unsafe_allow_html=True)
-
-
-
-# Create tabs for different functionalities
 tab1, tab2 = st.tabs(["Document Analysis", "Translation"])
 
 
+# --- TAB 1: Document Analysis ---
 with tab1:
-    # Sidebar for setup
     with st.sidebar:
         st.markdown("### Setup")
-
-        load_option = st.radio(
-            "Choose setup option:",
-            ["Process New Documents", "Load Existing Database"]
-        )
+        load_option = st.radio("Choose setup option:", ["Process New Documents", "Load Existing Database"])
 
         if load_option == "Process New Documents":
-            st.markdown("#### Process Documents")
-            data_option = st.radio(
-                "Select data source:",
-                ["Use default directory", "Upload files", "Custom directory"]
-            )
+            data_option = st.radio("Select data source:", ["Use default directory", "Upload files", "Custom directory"])
 
             if data_option == "Use default directory":
                 st.session_state.data_path = "data/Raw"
                 st.info("Using default: data/Raw")
 
             elif data_option == "Upload files":
-                uploaded_files = st.file_uploader("Upload files:", accept_multiple_files=True, type=['pdf', 'docx', 'csv', 'xlsx'])
+                uploaded_files = st.file_uploader("Upload files:", type=['pdf', 'docx', 'csv', 'xlsx'], accept_multiple_files=True)
                 if uploaded_files:
                     temp_dir = Path("data/uploaded")
                     temp_dir.mkdir(parents=True, exist_ok=True)
-                    for uploaded_file in uploaded_files:
-                        with open(os.path.join(temp_dir, uploaded_file.name), "wb") as f:
-                            f.write(uploaded_file.getbuffer())
+                    for file in uploaded_files:
+                        Path(temp_dir, file.name).write_bytes(file.getbuffer())
                     st.session_state.data_path = str(temp_dir)
-                    st.success(f"{len(uploaded_files)} files uploaded")
+                    st.success(f"{len(uploaded_files)} files uploaded.")
 
             elif data_option == "Custom directory":
                 st.session_state.data_path = st.text_input("Enter directory path:", value=st.session_state.data_path)
@@ -110,58 +76,43 @@ with tab1:
                     vector_db = process_documents_and_create_db(st.session_state.data_path, st.session_state.vector_db_path)
                     if vector_db:
                         st.session_state.vector_db = vector_db
-                        llm, qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
-                        st.session_state.llm = llm
-                        st.session_state.qa_chain = qa_chain
+                        st.session_state.llm, st.session_state.qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
                         st.session_state.documents_processed = True
                         st.rerun()
 
-        elif load_option == "Load Existing Database":
-            print(load_option)
+        else:  # Load Existing Database
             if st.button("Load Database"):
-                print("load_option")
                 with st.spinner("Loading database..."):
                     vector_db = load_vector_db(st.session_state.vector_db_path)
                     if vector_db:
                         st.session_state.vector_db = vector_db
-                        print('session_state')
-                        llm, qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
-                        print('setup_llm_and_qa')
-                        st.session_state.llm = llm
-                        st.session_state.qa_chain = qa_chain
-                        print('qa_chain')
+                        st.session_state.llm, st.session_state.qa_chain = setup_llm_and_qa(vector_db, LLM_MODEL_PATH)
                         st.session_state.documents_processed = True
                         st.success("Database loaded!")
                         st.rerun()
                     else:
                         st.error("Database not found. Please process documents first.")
 
+        # Allow adding files to existing database
         if st.session_state.vector_db:
             st.markdown("---")
-            st.markdown("#### Add Files for Preprocessing")
-            uploaded_files_add = st.file_uploader("Upload files to add to database:", accept_multiple_files=True, type=['pdf', 'docx', 'csv', 'xlsx'])
+            uploaded_files_add = st.file_uploader("Upload files to add:", type=['pdf', 'docx', 'csv', 'xlsx'], accept_multiple_files=True)
             if uploaded_files_add and st.button("Add Files"):
                 with st.spinner("Adding files to database..."):
-                    temp_dir_add = Path("data/uploaded_add")
-                    temp_dir_add.mkdir(parents=True, exist_ok=True)
-                    new_files_path = str(temp_dir_add)
-                    for uploaded_file in uploaded_files_add:
-                        with open(os.path.join(new_files_path, uploaded_file.name), "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                    new_vector_db = process_documents_and_create_db(new_files_path, st.session_state.vector_db_path)
-                    if new_vector_db and st.session_state.llm:
-                        st.session_state.vector_db = load_vector_db(st.session_state.vector_db_path) # Reload to include new data
+                    temp_dir = Path("data/uploaded_add")
+                    temp_dir.mkdir(parents=True, exist_ok=True)
+                    for file in uploaded_files_add:
+                        Path(temp_dir, file.name).write_bytes(file.getbuffer())
+
+                    if process_documents_and_create_db(str(temp_dir), st.session_state.vector_db_path):
+                        st.session_state.vector_db = load_vector_db(st.session_state.vector_db_path)
                         st.session_state.qa_chain = create_qa_chain(st.session_state.llm, st.session_state.vector_db)
-                        st.success(f"{len(uploaded_files_add)} files added to the database.")
+                        st.success(f"{len(uploaded_files_add)} files added.")
                         st.rerun()
-                    elif new_vector_db and not st.session_state.llm:
-                        st.error("LLM not initialized. Please preprocess initial documents first.")
-                    elif not new_vector_db:
-                        st.error("Failed to add new files to the database.")
+                    else:
+                        st.error("Failed to add new files.")
 
-        st.markdown("---")
-
-    # Main content area for answering questions
+    # --- MAIN CONTENT (Question Answering) ---
     if st.session_state.documents_processed and st.session_state.qa_chain:
         st.markdown('<p class="section-header">Ask Questions About Your Documents</p>', unsafe_allow_html=True)
 
@@ -169,105 +120,56 @@ with tab1:
         show_sources = st.checkbox("Show source documents", value=True)
 
         if query:
-            print(query)
             with st.spinner("Analyzing documents..."):
-                from utils.vector_db_utils import retrieve_relevant_documents
-                print('working on ans')
                 answer = st.session_state.qa_chain.invoke({"query": query})["result"]
                 st.markdown("### Answer")
-                st.markdown(f"<div style='background-color:#E6EEF7; color: black; padding:15px; border-radius:5px;'>{answer}</div>", unsafe_allow_html=True)
-                print('answer', answer)
-                
-                if show_sources and st.session_state.vector_db:
-                    st.markdown("### Relevant Sources")
-                    relevant_docs = retrieve_relevant_documents(st.session_state.vector_db, query)
+                st.markdown(f"<div class='answer-box'>{answer}</div>", unsafe_allow_html=True)
 
-                    for i, doc in enumerate(relevant_docs):
+                if show_sources:
+                    st.markdown("### Relevant Sources")
+                    for i, doc in enumerate(retrieve_relevant_documents(st.session_state.vector_db, query)):
                         with st.expander(f"Source {i+1}"):
                             st.markdown(doc.page_content)
-                            if hasattr(doc.metadata, 'source') and doc.metadata.source:
-                                st.caption(f"Source: {doc.metadata.source}")
-                                
+                            if hasattr(doc.metadata, 'source'):
+                                st.caption(f"Source: {doc.metadata.get('source', 'Unknown')}")
 
-    elif not st.session_state.documents_processed:
-        # Display welcome message and instructions
+    else:
         st.markdown("""
         ## Welcome to Mysterious Document Analyzer! 👋
-
-        This application helps you analyze your documents.
-
-        ### Getting Started
-
-        1. Choose whether to process new documents or load an existing database in the sidebar.
-        2. Follow the instructions to either preprocess your data or load the existing setup.
-        3. Once processed/loaded, you can ask questions in the main area.
+        1. Choose to process new documents or load an existing database.
+        2. Preprocess or load your documents.
+        3. Ask questions based on your document content!
         """)
 
-    
-# --- Translation Tab ---
+# --- TAB 2: Translation ---
 with tab2:
     st.markdown('<p class="section-header">Upload and Translate Documents</p>', unsafe_allow_html=True)
 
-    # File upload for translation
-    uploaded_files = st.file_uploader(
-        "Upload file(s) to translate:",
-        accept_multiple_files=True,
-        type=['pdf', 'docx', 'txt', 'csv', 'xlsx'],
-        key="upload_translation"
-    )
-
-    # Language selection
-    source_lang = st.selectbox("Select source language:", ["en", "de", "fr", "es", "ar", "zh"])
-    target_lang = st.selectbox("Select target language:", ["en", "de", "fr", "es", "ar", "zh"])
+    uploaded_files = st.file_uploader("Upload file(s) to translate:", type=['pdf', 'docx', 'txt', 'csv', 'xlsx'], accept_multiple_files=True, key="upload_translation")
+    source_lang = st.selectbox("Source language:", ["en", "de", "fr", "es", "ar", "zh"])
+    target_lang = st.selectbox("Target language:", ["en", "de", "fr", "es", "ar", "zh"])
 
     if uploaded_files:
-        # Create a temporary directory to save uploaded files
         temp_dir = Path("data/uploaded")
         temp_dir.mkdir(parents=True, exist_ok=True)
+        for file in uploaded_files:
+            file_path = Path(temp_dir, file.name)
+            file_path.write_bytes(file.getbuffer())
 
-        # Save uploaded files to the temporary directory
-        for uploaded_file in uploaded_files:
-            with open(os.path.join(temp_dir, uploaded_file.name), "wb") as f:
-                f.write(uploaded_file.getbuffer())
-        st.success(f"{len(uploaded_files)} file(s) uploaded successfully.")
-
-        file_dir = str(temp_dir) + '/' + str(uploaded_file.name)
-        print('Path', file_dir)
-        # Translate button
-        if st.button("Translate Documents"):
-            with st.spinner("Translating documents..."):
-                # Load the documents
-                documents = load_document(file_dir)
-                if documents:
-                    translations = []
-                    for doc in documents:
-                        text_to_translate = doc.page_content[:150]
-                        translated_text = translate(
-                            text_to_translate,
-                            model_path=TRANSLATION_MODEL_PATH,
-                            source_lang=source_lang,
-                            target_lang=target_lang
-                        )
-                        translations.append({"filename": doc.metadata["source"], "translation": translated_text})
-
-                    st.success("Translation complete!")
-
-                    # Display translations
-                    for translated_doc in translations:
-                        st.markdown(f"### 📄 Document: {translated_doc['filename']}")
-                        st.markdown(
-                            f"<div style='background-color:#1D1615; padding:15px; border-radius:5px;'>{translated_doc['translation']}</div>",
-                            unsafe_allow_html=True)
-                else:
-                    st.error("No documents loaded for translation.")
+            if st.button("Translate Documents"):
+                with st.spinner("Translating documents..."):
+                    documents = load_document(str(file_path))
+                    if documents:
+                        for doc in documents:
+                            text = doc.page_content[:200]  # Only translate snippet
+                            translation = translate(text, model_path=TRANSLATION_MODEL_PATH, source_lang=source_lang, target_lang=target_lang)
+                            st.markdown(f"### 📄 {doc.metadata.get('source', 'Unknown File')}")
+                            st.markdown(f"<div class='translation-box'>{translation}</div>", unsafe_allow_html=True)
+                    else:
+                        st.error("No documents loaded.")
     else:
-        st.markdown("Please upload documents to translate.")
+        st.info("Please upload documents to translate.")
 
-
-
-# Footer
+# --- FOOTER ---
 st.markdown("---")
-st.markdown("Mysterious Document Analyzer © 2025")
-
-
-
+st.caption("Mysterious Document Analyzer © 2025")

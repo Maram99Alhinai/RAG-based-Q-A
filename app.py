@@ -1,6 +1,7 @@
 from utils.llm_utils import create_qa_chain, process_documents_and_create_db, setup_llm_and_qa
 from utils.vector_db_utils import load_vector_db, retrieve_relevant_documents
 from utils.document_processing import load_document
+from utils.summarization_utils import summarize_text
 from utils.translation_utils import translate
 from pathlib import Path
 import streamlit as st
@@ -32,7 +33,7 @@ if Path("style.css").exists():
 
 # --- HEADER ---
 st.markdown('<p class="main-title">📚 Mysterious Document Analyzer</p>', unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["Document Analysis", "Translation"])
+tab1, tab2, tab3 = st.tabs(["Document Analysis", "Translation", "summarization"])
 
 
 # --- TAB 1: Document Analysis ---
@@ -160,7 +161,34 @@ with tab2:
     else:
         st.info("Please upload documents to translate.")
         
-        
+
+# --- TAB 3: summarization ---
+with tab3:
+    st.markdown('<p class="section-header">Upload and summarization Documents</p>', unsafe_allow_html=True)
+
+    uploaded_files = st.file_uploader("Upload file(s) to summarization:", type=['pdf', 'docx', 'txt', 'csv', 'xlsx'], accept_multiple_files=True, key="upload_summarization")
+
+
+    if uploaded_files:
+        temp_dir = Path("data/uploaded")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        for file in uploaded_files:
+            file_path = Path(temp_dir, file.name)
+            file_path.write_bytes(file.getbuffer())
+
+        if st.button("summarize Documents"):
+            with st.spinner("summarize documents..."):
+                documents = load_document(str(file_path))
+                if documents:
+                    for doc in documents:
+                        text = doc.page_content[:400]  
+                        summarization = summarize_text(text)
+                        st.markdown(f"### 📄 {doc.metadata.get('source', 'Unknown File')}")
+                        st.markdown(f"<div class='summarization-box'>{summarization}</div>", unsafe_allow_html=True)
+                else:
+                    st.error("No documents loaded.")
+    else:
+        st.info("Please upload documents to summarize.")       
 
 
 # --- FOOTER ---

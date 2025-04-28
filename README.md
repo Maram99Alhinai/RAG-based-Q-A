@@ -43,10 +43,9 @@ Build the document loading → chunking → vectorizing → retrieval → answer
 - git lfs install
 - git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/meta-llama/Llama-2-7b-chat-hf
 - git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/facebook/m2m100_418M
-- git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/microsoft/Phi-3-mini-4k-instruct
-- cd ..
+- git clone https://YOUR_USERNAME:YOUR_TOKEN@hf.co/facebook/bart-large-cnn
 - streamlit run app.py
-
+   
 
 # changes to make 
 make the user select the data folder

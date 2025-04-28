@@ -1,13 +1,11 @@
-from utils.llm_utils import create_qa_chain ,process_documents_and_create_db ,setup_llm_and_qa
-from utils.vector_db_utils import load_vector_db , retrieve_relevant_documents
+from utils.llm_utils import create_qa_chain, process_documents_and_create_db, setup_llm_and_qa
+from utils.vector_db_utils import load_vector_db, retrieve_relevant_documents
 from utils.document_processing import load_document
 from utils.translation_utils import translate
 from pathlib import Path
 import streamlit as st
 import torch
 import os
-
-
 
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Mysterious Document Analyzer", page_icon="📚", layout="wide")
@@ -23,7 +21,8 @@ for key, value in {
     "documents_processed": False,
     "data_path": "data/Raw",
     "vector_db_path": "./data/vector_db",
-    "translation_service": None
+    "translation_service": None,
+    "messages": []  # Initialize messages for chatbot
 }.items():
     st.session_state.setdefault(key, value)
 
@@ -93,41 +92,32 @@ with tab1:
                     else:
                         st.error("Database not found. Please process documents first.")
 
-        # Allow adding files to existing database
-        if st.session_state.vector_db:
-            st.markdown("---")
-            uploaded_files_add = st.file_uploader("Upload files to add:", type=['pdf', 'docx', 'csv', 'xlsx'], accept_multiple_files=True)
-            if uploaded_files_add and st.button("Add Files"):
-                with st.spinner("Adding files to database..."):
-                    temp_dir = Path("data/uploaded_add")
-                    temp_dir.mkdir(parents=True, exist_ok=True)
-                    for file in uploaded_files_add:
-                        Path(temp_dir, file.name).write_bytes(file.getbuffer())
-
-                    if process_documents_and_create_db(str(temp_dir), st.session_state.vector_db_path):
-                        st.session_state.vector_db = load_vector_db(st.session_state.vector_db_path)
-                        st.session_state.qa_chain = create_qa_chain(st.session_state.llm, st.session_state.vector_db)
-                        st.success(f"{len(uploaded_files_add)} files added.")
-                        st.rerun()
-                    else:
-                        st.error("Failed to add new files.")
-
-    # --- MAIN CONTENT (Question Answering) ---
+# --- MAIN CONTENT (Question Answering with Chatbot Style) ---
     if st.session_state.documents_processed and st.session_state.qa_chain:
         st.markdown('<p class="section-header">Ask Questions About Your Documents</p>', unsafe_allow_html=True)
 
-        query = st.text_input("Your question:", key="qa_query")
-        show_sources = st.checkbox("Show source documents", value=True)
+        # Display all the historical messages
+        for message in st.session_state.messages:
+            with st.chat_message(message['role']):
+                st.markdown(message['content'])
 
-        if query:
+        # Build a prompt input template to display the prompts
+        prompt = st.chat_input('Pass Your Prompt here')
+
+        if prompt:
+            st.session_state.messages.append({'role': 'user', 'content': prompt})
+            with st.chat_message('user'):
+                st.markdown(prompt)
+
             with st.spinner("Analyzing documents..."):
-                answer = st.session_state.qa_chain.invoke({"query": query})["result"]
-                st.markdown("### Answer")
-                st.markdown(f"<div class='answer-box'>{answer}</div>", unsafe_allow_html=True)
+                answer = st.session_state.qa_chain.invoke({"query": prompt})["result"]
+                st.session_state.messages.append({'role': 'assistant', 'content': answer})
+                with st.chat_message('assistant'):
+                    st.markdown(answer)
 
-                if show_sources:
+                if st.checkbox("Show source documents", key=f"sources_{len(st.session_state.messages)}", value=False):
                     st.markdown("### Relevant Sources")
-                    for i, doc in enumerate(retrieve_relevant_documents(st.session_state.vector_db, query)):
+                    for i, doc in enumerate(retrieve_relevant_documents(st.session_state.vector_db, prompt)):
                         with st.expander(f"Source {i+1}"):
                             st.markdown(doc.page_content)
                             if hasattr(doc.metadata, 'source'):
@@ -156,19 +146,22 @@ with tab2:
             file_path = Path(temp_dir, file.name)
             file_path.write_bytes(file.getbuffer())
 
-            if st.button("Translate Documents"):
-                with st.spinner("Translating documents..."):
-                    documents = load_document(str(file_path))
-                    if documents:
-                        for doc in documents:
-                            text = doc.page_content[:200]  # Only translate snippet
-                            translation = translate(text, model_path=TRANSLATION_MODEL_PATH, source_lang=source_lang, target_lang=target_lang)
-                            st.markdown(f"### 📄 {doc.metadata.get('source', 'Unknown File')}")
-                            st.markdown(f"<div class='translation-box'>{translation}</div>", unsafe_allow_html=True)
-                    else:
-                        st.error("No documents loaded.")
+        if st.button("Translate Documents"):
+            with st.spinner("Translating documents..."):
+                documents = load_document(str(file_path))
+                if documents:
+                    for doc in documents:
+                        text = doc.page_content[:200]  # Only translate snippet
+                        translation = translate(text, model_path=TRANSLATION_MODEL_PATH, source_lang=source_lang, target_lang=target_lang)
+                        st.markdown(f"### 📄 {doc.metadata.get('source', 'Unknown File')}")
+                        st.markdown(f"<div class='translation-box'>{translation}</div>", unsafe_allow_html=True)
+                else:
+                    st.error("No documents loaded.")
     else:
         st.info("Please upload documents to translate.")
+        
+        
+
 
 # --- FOOTER ---
 st.markdown("---")
